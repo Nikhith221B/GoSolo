@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GoSolo (Phase 1 Foundation)
 
-## Getting Started
+Trust-first solo traveler platform foundation built with Next.js App Router, TypeScript,
+Tailwind, shadcn/ui, and Supabase.
 
-First, run the development server:
+## Stack
+
+- Next.js App Router + React + TypeScript
+- Tailwind CSS + shadcn/ui
+- Supabase Auth + Postgres (RLS)
+- Zod + React Hook Form
+
+## Local setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Create local env file from template:
+
+```bash
+copy .env.example .env.local
+```
+
+3. Fill values in `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+4. Start dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase migrations
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Phase 1 migration SQL lives in `supabase/migrations/`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Apply migrations with your preferred Supabase workflow (local CLI or remote SQL editor).
+The Phase 1 migration creates only these foundation tables:
 
-## Learn More
+- `profiles`
+- `user_roles`
+- `user_private`
 
-To learn more about Next.js, take a look at the following resources:
+It also sets:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `handle_new_user` trigger to provision new auth users
+- `set_updated_at` trigger for mutable foundation tables
+- RLS policies for the three foundation tables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Admin testing in Phase 1
 
-## Deploy on Vercel
+Admin routes are gated to users with `user_roles.role = 'admin'`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Promote a user manually for local testing:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```sql
+update public.user_roles
+set role = 'admin'
+where user_id = '<auth_user_uuid>';
+```
+
+## Quality checks
+
+```bash
+npm run lint
+npm run typecheck
+```
+
+## Manual QA checklist (Phase 1)
+
+- Signup works
+- Login works
+- Logout works
+- Forgot password request works
+- Incomplete users are redirected to `/onboarding`
+- Guests cannot access `/dashboard`
+- Non-admin users cannot access `/admin`
