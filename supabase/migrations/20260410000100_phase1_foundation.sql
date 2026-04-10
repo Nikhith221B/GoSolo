@@ -17,6 +17,7 @@ create table if not exists public.profiles (
   budget_preference text,
   social_vibe text,
   interests text[] not null default '{}',
+  is_public boolean not null default false,
   onboarding_completed boolean not null default false,
   profile_completion_percent int not null default 0,
   created_at timestamptz not null default timezone('utc', now()),
@@ -29,6 +30,7 @@ create table if not exists public.user_private (
   is_18_plus_confirmed boolean not null default false,
   phone_number text,
   verification_level text not null default 'basic',
+  check (verification_level in ('basic', 'verified', 'trusted')),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -112,10 +114,18 @@ alter table public.user_private enable row level security;
 alter table public.user_roles enable row level security;
 
 drop policy if exists "profiles are publicly readable" on public.profiles;
-create policy "profiles are publicly readable"
+drop policy if exists "users can read own profile" on public.profiles;
+drop policy if exists "public can read discoverable profiles" on public.profiles;
+create policy "public can read discoverable profiles"
 on public.profiles
 for select
-using (true);
+to anon, authenticated
+using (is_public = true and onboarding_completed = true);
+
+create policy "users can read own profile"
+on public.profiles
+for select
+using (auth.uid() = id);
 
 drop policy if exists "users can update own profile" on public.profiles;
 create policy "users can update own profile"
